@@ -1,5 +1,9 @@
 //! A cryptree node controls read and write access to a directory or file.
 
+use std::sync::Arc;
+
+use crate::blockstore::{BlockStore, InMemoryBlockStore};
+
 /// A cryptree node controls read and write access to a directory or file.
 ///
 /// A directory contains the following distinct symmetric read keys {base, parent}, and file contains {base == parent, data}
@@ -24,22 +28,45 @@
 ///
 #[derive(Debug)]
 pub struct CryptreeNode {
+    block_store: Arc<dyn BlockStore>,
+
+    // TODO: what is the actual pointer, the block storage key.
+    previous_version: Option<u32>,
     is_directory: bool,
 }
 
 impl CryptreeNode {
-    pub fn new(is_directory: bool) -> Self {
-        Self { is_directory }
+    pub fn new(
+        block_store: Arc<dyn BlockStore>,
+        is_directory: bool,
+        previous_version: Option<u32>,
+    ) -> Self {
+        Self {
+            block_store,
+
+            is_directory,
+            previous_version,
+        }
     }
 
-    pub fn new_space() -> Self {
-        Self { is_directory: true }
+    /// Create an in memory [space](../design/write_space.md).
+    pub fn new_in_memory_space() -> Self {
+        Self {
+            block_store: Arc::new(InMemoryBlockStore::new()),
+
+            previous_version: None,
+            is_directory: true,
+        }
     }
 
     // === Getters ===
 
     pub fn is_directory(&self) -> bool {
         self.is_directory
+    }
+
+    pub fn previous_version(&self) -> Option<&u32> {
+        self.previous_version.as_ref()
     }
 }
 
@@ -49,7 +76,7 @@ mod tests {
 
     #[test]
     fn basic() {
-        let fs = CryptreeNode::new_space();
+        let fs = CryptreeNode::new_in_memory_space();
 
         dbg!(fs);
 
