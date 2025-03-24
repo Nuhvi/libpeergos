@@ -2,5 +2,9 @@
 name = "cryptree"
 version = "0.0.1"
 edition = "2021"
+description = "Folder tree Structure for cryptographic file systems"
+homepage = "https://github.com/mlkut/cryptree"
+repository = "https://github.com/mlkut/cryptree"
+license = "MIT"
 
 [dependencies]
