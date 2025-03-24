@@ -1,9 +1,5 @@
 //! A cryptree node controls read and write access to a directory or file.
 
-use std::sync::Arc;
-
-use crate::blockstore::{BlockStore, InMemoryBlockStore};
-
 /// A cryptree node controls read and write access to a directory or file.
 ///
 /// A directory contains the following distinct symmetric read keys {base, parent}, and file contains {base == parent, data}
@@ -27,23 +23,14 @@ use crate::blockstore::{BlockStore, InMemoryBlockStore};
 ///       The parent link is present on the first chunk of all files and directories except your home directory
 ///
 #[derive(Debug)]
-pub struct CryptreeNode {
-    block_store: Arc<dyn BlockStore>,
-
-    // TODO: what is the actual pointer, the block storage key.
-    previous_version: Option<u32>,
+pub struct CryptreeNode<P> {
+    previous_version: Option<P>,
     is_directory: bool,
 }
 
-impl CryptreeNode {
-    pub fn new(
-        block_store: Arc<dyn BlockStore>,
-        is_directory: bool,
-        previous_version: Option<u32>,
-    ) -> Self {
+impl<P: Clone> CryptreeNode<P> {
+    pub fn new(is_directory: bool, previous_version: Option<P>) -> Self {
         Self {
-            block_store,
-
             is_directory,
             previous_version,
         }
@@ -52,8 +39,6 @@ impl CryptreeNode {
     /// Create an in memory [space](../design/write_space.md).
     pub fn new_in_memory_space() -> Self {
         Self {
-            block_store: Arc::new(InMemoryBlockStore::new()),
-
             previous_version: None,
             is_directory: true,
         }
@@ -65,7 +50,7 @@ impl CryptreeNode {
         self.is_directory
     }
 
-    pub fn previous_version(&self) -> Option<&u32> {
+    pub fn previous_version(&self) -> Option<&P> {
         self.previous_version.as_ref()
     }
 }
@@ -74,9 +59,16 @@ impl CryptreeNode {
 mod tests {
     use super::*;
 
+    #[derive(Debug, Clone)]
+    pub struct Pointer {
+        user_id: u32,
+        write_space: u16,
+        version: u32,
+    }
+
     #[test]
     fn basic() {
-        let fs = CryptreeNode::new_in_memory_space();
+        let fs: CryptreeNode<Pointer> = CryptreeNode::new_in_memory_space();
 
         dbg!(fs);
 
